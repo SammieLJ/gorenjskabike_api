@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <title>Tržič API JSON Data Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2>Stanje izposoje koles v občini Tržič</h2>
+
+    <button id="loadDataButton">Load Data from API</button>
+    <br /><br />
+    <b><div id="currentTime"></div></b>
+    
+    <div id="latestValuesContainer"></div>
+
+    <script>
+        document.getElementById('loadDataButton').addEventListener('click', loadDataFromAPI);
+
+        // časovna razlika v minutah je pri page=1010
+        function loadDataFromAPI() {
+            const apiURL = 'http://localhost:3000/api/gorenjskabike?page=993&size=1000';
+
+            fetch(apiURL)
+                .then(response => response.json())
+                .then(data => {
+                    displayLatestValues(data.results);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function displayLatestValues(results) {
+            const latestValues = getLatestValues(results);
+            renderTable(latestValues);
+        }
+
+        function getLatestValues(results) {
+            const latestValues = {};
+
+            for (let i = results.length - 1; i >= 0; i--) {
+                const item = results[i];
+                const id = item.id;
+
+                // If this ID hasn't been encountered yet, or it's the first occurrence for this ID, add it to the latestValues
+                if (!latestValues[id]) {
+                    latestValues[id] = {
+                        //id: id,
+                        nameStreet: item.name + ' - ' + item.street,
+                        timestamp: formatTimestamp2(item.timestamp),
+                        numberOfBikes: parseInt(item.numberOfBikes),
+                        numberOfFreeBikes: parseInt(item.numberOfFreeBikes),
+                        numberOfLocks: parseInt(item.numberOfLocks),
+                        numberOfFreeLocks: parseInt(item.numberOfFreeLocks),
+                        numberOfTotalFaulty: parseInt(item.numberOfTotalFaulty)
+                    };
+                }
+            }
+
+            console.log('Latest Values:', Object.values(latestValues));
+
+            // Include the last item for each ID in the array
+            return Object.values(latestValues);
+        }
+
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+            const year = date.getFullYear();
+
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${day}.${month}.${year} ${hours}:${minutes}`;
+        }
+
+        function formatTimestamp2(timestamp) {
+            const date = new Date(timestamp);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = date.toLocaleDateString('sl-SI', options);
+            const timeString = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+            return `${dateString} ob ${timeString}`;
+        }
+
+        function renderTable(data) {
+            const tableContainer = document.getElementById('latestValuesContainer');
+            tableContainer.innerHTML = '';
+
+            const table = document.createElement('table');
+            //<th>ID</th>
+            table.innerHTML = `
+                <tr>
+                    <th>Ulica</th>
+                    <th>Zadnja posodobitev</th>
+                    <th>Število koles</th>
+                    <th>Št. prostih koles</th>
+                    <th>Št. zaklenjenih koles</th>
+                    <th>Št. odklenjenih koles</th>
+                    <th>Št. okvarjenih koles</th>
+                </tr>
+            `;
+
+            data.forEach(station => {
+                const row = document.createElement('tr');
+                //<td>${station.id}</td>
+                row.innerHTML = `
+                    <td>${station.nameStreet}</td>
+                    <td>${station.timestamp}</td>
+                    <td>${station.numberOfBikes}</td>
+                    <td>${station.numberOfFreeBikes}</td>
+                    <td>${station.numberOfLocks}</td>
+                    <td>${station.numberOfFreeLocks}</td>
+                    <td>${station.numberOfTotalFaulty}</td>
+                `;
+
+                table.appendChild(row);
+            });
+
+            tableContainer.appendChild(table);
+        }
+
+        function updateCurrentTime() {
+            const currentTimeElement = document.getElementById('currentTime');
+            const currentDateTime = new Date();
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', timeZoneName: 'short' };
+            //const formattedCurrentDateTime = currentDateTime.toLocaleDateString('sl-SI', options);
+            const formattedCurrentDateTime = formatTimestamp2(currentDateTime);
+
+            currentTimeElement.textContent = `Trenutni čas: ${formattedCurrentDateTime}`;
+        }
+
+        // Call the function initially
+        updateCurrentTime();
+
+    </script>
+</body>
+</html>
