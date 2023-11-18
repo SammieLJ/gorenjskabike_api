@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tržič API JSON Data Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2>Stanje izposoje koles v občini Tržič</h2>
+    <br /><br />
+    <b><div id="currentTime"></div></b>
+
+    <!-- Add two datetime-local inputs for selecting date range -->
+    <label for="dateTimePickerFrom">Select Date From:</label>
+    <input type="datetime-local" id="dateTimePickerFrom">
+
+    <label for="dateTimePickerTo">Select Date To:</label>
+    <input type="datetime-local" id="dateTimePickerTo">
+
+    <button onclick="fetchDataFromAPI()">Pridobi podatke</button>
+    <span id="TotalDataRecords"></span>
+
+    <div id="latestValuesContainer"></div>
+    <div id="paginationButtons"></div> <!-- Container for pagination buttons -->
+    <script>
+        // Add these variables at the beginning of your script
+        const itemsPerPage = 25;
+        let currentPage = 1;
+
+        // Update your fetchDataFromAPI function to reset the current page to 1
+        function fetchDataFromAPI() {
+            currentPage = 1;
+
+            const dateTimePickerFrom = document.getElementById('dateTimePickerFrom');
+            const dateTimePickerTo = document.getElementById('dateTimePickerTo');
+            const selectedDateTimeFrom = dateTimePickerFrom.value;
+            const selectedDateTimeTo = dateTimePickerTo.value;
+
+            if (!selectedDateTimeFrom || !selectedDateTimeTo) {
+                alert('Please select both date and time.');
+                return;
+            }
+
+            //Opozorimo uporabnika, da bo nekaj časa trajalo, da se podatki pridobijo iz cachesirane oblike
+            const tableContainer = document.getElementById('latestValuesContainer');
+            tableContainer.innerHTML = '<b><span>Please wait for moment. Data is being prepared and loaded!</span></b>';
+
+            //Skupno št. filtriranih podatkov, ko čakamo, ne prikažemo.
+            let totalDataRecords = document.getElementById('TotalDataRecords');
+            totalDataRecords.innerHTML = '';
+
+            //Umaknemo pagination gumbe
+            const paginationContainer = document.getElementById('paginationButtons');
+            paginationContainer.innerHTML = '';
+
+            fetch(`http://localhost:3001/api/localdata?selectedDateTimeFrom=${selectedDateTimeFrom}&selectedDateTimeTo=${selectedDateTimeTo}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Process and display data as needed
+                    console.log('Filtered Data:', data);
+                    renderTable(data); // Call the renderTable function
+                    
+                    // Show total data records
+                    const txt = document.createTextNode(`Skupno št. filtriranih podatkov ${data.length}`);
+                    
+                    totalDataRecords.appendChild(txt);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Function to handle calendar change
+        document.getElementById('dateTimePickerFrom').addEventListener('change', handleCalendarChange);
+        document.getElementById('dateTimePickerTo').addEventListener('change', handleCalendarChange);
+
+        // Function to update current time
+        setInterval(updateCurrentTime, 1000); // Update every second
+
+        // Function to handle calendar change
+        function handleCalendarChange(event) {
+            const selectedDateTimeFrom = document.getElementById('dateTimePickerFrom').value;
+            const selectedDateTimeTo = document.getElementById('dateTimePickerTo').value;
+            console.log('Selected Date and Time From:', selectedDateTimeFrom);
+            console.log('Selected Date and Time To:', selectedDateTimeTo);
+        }
+
+        // Function to update current time
+        function updateCurrentTime() {
+            const currentTimeElement = document.getElementById('currentTime');
+            const currentDateTime = new Date();
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', timeZoneName: 'short' };
+            const formattedCurrentDateTime = formatTimestamp2(currentDateTime);
+
+            currentTimeElement.textContent = `Trenutni čas: ${formattedCurrentDateTime}`;
+        }
+         // Call the function initially
+        updateCurrentTime();
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+            const year = date.getFullYear();
+
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${day}.${month}.${year} ${hours}:${minutes}`;
+        }
+
+        // Function to format timestamp
+        function formatTimestamp2(timestamp) {
+            const date = new Date(timestamp);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = date.toLocaleDateString('sl-SI', options);
+            const timeString = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+            return `${dateString} ob ${timeString}`;
+        }
+
+        function loadDataFromFile() {
+            fetch('allData.json')
+                .then(response => response.json())
+                .then(data => {
+                    displayLatestValues(data);
+                })
+                .catch(error => console.error('Error fetching data from file:', error));
+        }
+
+        // New function to render table
+        function renderTable(data) {
+            const tableContainer = document.getElementById('latestValuesContainer');
+            tableContainer.innerHTML = '';
+            let index = 0;
+
+            // Calculate start and end indices for the current page
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <tr>
+                    <th>Zap. št.</th>
+                    <th>Ulica</th>
+                    <th>Zadnja posodobitev</th>
+                    <th>Število koles</th>
+                    <th>Št. prostih koles</th>
+                    <th>Št. zaklenjenih koles</th>
+                    <th>Št. odklenjenih koles</th>
+                    <th>Št. okvarjenih koles</th>
+                </tr>
+            `;
+
+            // Display only the subset of data for the current page
+            data.slice(startIndex, endIndex).forEach(station => {
+                const row = document.createElement('tr');
+                const dateTime = formatTimestamp2(station.timestamp);
+                index += 1;
+                row.innerHTML = `
+                    <td>${index}</td>
+                    <td>${station.name + ' - ' + station.street}</td>
+                    <td>${dateTime}</td>
+                    <td>${station.numberOfBikes}</td>
+                    <td>${station.numberOfFreeBikes}</td>
+                    <td>${station.numberOfLocks}</td>
+                    <td>${station.numberOfFreeLocks}</td>
+                    <td>${station.numberOfTotalFaulty}</td>
+                `;
+
+                table.appendChild(row);
+            });
+
+            tableContainer.appendChild(table);
+
+            // Call the function to render pagination buttons
+            renderPaginationButtons(data);
+        }
+
+        // Add a new function to render pagination buttons
+        function renderPaginationButtons(data) {
+            const totalPages = Math.ceil(data.length / itemsPerPage);
+            const paginationContainer = document.getElementById('paginationButtons');
+            paginationContainer.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    renderTable(data);
+                });
+
+                paginationContainer.appendChild(button);
+            }
+        }
+</script>
+
+</body>
+</html>
