@@ -15,6 +15,8 @@ Node.js must be installed on your system. This is because, I am trying to evade 
 You should have these modules installed on your system:
 **npm install express node-fetch**
 
+To run server, run on windows/linux/mac in Termina command **node server.js** 
+
 ## Requirements for Go Lang version
 Use command in Termina/Command Prompt, to get nececary gorilla mux library
 **go get github.com/gorilla/mux**
