@@ -5,3 +5,6 @@ https://api.open-meteo.com/v1/forecast?latitude=46.36&longitude=14.31&current=te
 localhost:3001/api/localdata?selectedDateTimeFrom=2023-09-30T18:00&selectedDateTimeTo=2023-10-01T11:00
 
 https://api.open-meteo.com/v1/forecast?latitude=46.36&longitude=14.31&current=temperature_2m
+
+https://open-meteo.com/
+https://latitudelongitude.org/si/trzic/
