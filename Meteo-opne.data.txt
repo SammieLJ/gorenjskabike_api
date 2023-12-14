@@ -1,0 +1,7 @@
+https://archive-api.open-meteo.com/v1/era5?latitude=46.36&longitude=14.31&start_date=2023-12-01&end_date=2023-12-13&hourly=temperature_2m
+
+https://api.open-meteo.com/v1/forecast?latitude=46.36&longitude=14.31&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m
+
+localhost:3001/api/localdata?selectedDateTimeFrom=2023-09-30T18:00&selectedDateTimeTo=2023-10-01T11:00
+
+https://api.open-meteo.com/v1/forecast?latitude=46.36&longitude=14.31&current=temperature_2m

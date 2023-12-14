@@ -1,0 +1,18 @@
+		<tr>
+                    <th>ID</th>
+                    <th>Ulica</th>
+                    <th>Zadnja posodobitev</th>
+                    <th>Število koles</th>
+                    <th>Št. prostih koles</th>
+                    <th>Št. zaklenjenih koles</th>
+                    <th>Št. odklenjenih koles</th>
+                    <th>Št. vse okvarjenih koles</th>
+                </tr>
+
+
+ 	03/02/2023, 02:49:00
+ 	četrtek, 2. februar 2023 ob 21:17
+
+
+ 	2023-09-28T21:23:00.004426078+02:00
+ 	četrtek, 28. september 2023 ob 15:51

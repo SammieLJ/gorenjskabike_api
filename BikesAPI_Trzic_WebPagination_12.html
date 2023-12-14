@@ -54,12 +54,15 @@
             padding: 10px;
             border: 1px solid #ccc;
         }
+        .inline-div {
+            display: inline-block;
+            margin-right: 10px; /* Optional: Add some margin between the divs */
+        }
     </style>
 </head>
 <body>
     <h2>Stanje izposoje koles v občini Tržič</h2>
-    <br /><br />
-    <b><div id="currentTime"></div></b>
+    <b><div class="inline-div" id="currentTime"></div><p class="inline-div" id="temperature">Nalaga...</p></b>
 
     <!-- Add two datetime-local inputs for selecting date range -->
     <label for="dateTimePickerFrom">Select Date From:</label>
@@ -164,6 +167,35 @@
         }
          // Call the function initially
         updateCurrentTime();
+
+        // Call opne-meteo weather API service
+
+        // Replace latitude and longitude with your desired coordinates
+        function callOpenMeteoAPI() {
+            const latitude = 46.36;
+            const longitude = 14.31;
+
+            // Construct the API URL
+            const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
+
+            // Fetch data from the API
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // Extract the current temperature from the API response
+                    const currentTemperature = data.current.temperature_2m;
+
+                    // Update the temperature display on the web page
+                    document.getElementById("temperature").innerText = `Trenutna temperatura: ${currentTemperature} °C`;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById("temperature").innerText = 'Failed to fetch temperature';
+                });
+        }
+        
+        // call open-meteo API service
+        callOpenMeteoAPI();
 
         function formatTimestamp(timestamp) {
             const date = new Date(timestamp);
@@ -296,53 +328,51 @@
 
         // Function to draw a line chart
         function drawLineChart(data) {
-        // Destroy the existing chart if it exists
         if (lineChart) {
             lineChart.destroy();
         }
 
-        const labels = data.map(entry => formatTimestampDateObject(entry.timestamp));
-        console.log('Labels:', labels);
+        // Log the original data
+        console.log('Original Data:', data);
 
-        const datasets = [
-            {
-                label: 'Number of Bikes',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                data: data.map(entry => entry.numberOfBikes),
-                backgroundColor: 'green',
-                tension: 0.5
+        // Initialize datasets as an empty array
+        let datasets = [];
 
-            },
-            // Add more datasets as needed
-            {
-                label: 'Number of Free Bikes',
-                borderColor: 'rgba(60, 20, 150, 1)',
-                data: data.map(entry => entry.numberOfFreeBikes),
-                backgroundColor: 'purple',
-                tension: 0.5
-            },
-            {
-                label: 'Number of Locked Bikes',
-                borderColor: 'rgba(120, 0, 0, 1)',
-                data: data.map(entry => entry.numberOfLocks),
-                backgroundColor: 'red',
-                tension: 0.5
-            },
-            {
-                label: 'Number of Freely locked Bikes',
-                borderColor: 'rgba(10, 60, 240, 1)',
-                data: data.map(entry => entry.numberOfFreeLocks),
-                backgroundColor: 'blue',
-                tension: 0.5
-            }
-        ];
-        console.log('Datasets:', datasets);
+        // Iterate over each ID (96, 97, 98)
+        [96, 97, 98].forEach(id => {
+            console.log('Filtering for ID:', id);
+            //const filteredData = data.filter(entry => entry.id === id);
+            const filteredData = data.filter((entry) => (entry.id == id));
+            
+            console.log(`Filtering data for ${id}:`, filteredData);
+
+            ['numberOfBikes', 'numberOfFreeBikes', 'numberOfLocks', 'numberOfFreeLocks'].forEach(property => {
+                const mappedData = filteredData.map(entry => ({
+                    x: new Date(entry.timestamp),
+                    y: entry[property]
+                }));
+
+                console.log(`Mapped Data for ID ${id} - ${property}:`, mappedData);
+                const newDataset = {
+                    label: `ID ${id} - ${property.replace('numberOf', '')}`,
+                    borderColor: getRandomColor(),
+                    data: mappedData,
+                    tension: 0.5
+                };
+
+                // Push the newDataset object into datasets
+                datasets.push(newDataset);
+            });
+        });
+
+        // Log datasets to check if it has the expected structure
+        //console.log('Datasets:', datasets);
+
 
         const ctx = document.getElementById('lineChart').getContext('2d');
         lineChart = new Chart(ctx, {
-            type: 'scatter',  //line
+            type: 'line', //scatter
             data: {
-                labels: labels,
                 datasets: datasets
             },
             options: {
@@ -350,13 +380,11 @@
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        //display: false, // ni obstajal, default je true
                         type: 'time',
                         time: {
-                            parser: 'date-fns', // Specify the date adapter
-                            unit: 'minute', // Adjust the time unit as needed
+                            unit: 'minute',
                             displayFormats: {
-                                minute: 'HH:mm', // Adjust the display format as needed
+                                minute: 'HH:mm',
                             },
                         },
                         title: {
@@ -377,11 +405,20 @@
                         position: 'bottom',
                     },
                 }
-            }//, options: {
-            //    aspectRatio:2.5
-            //}
+            }
         });
     }
+
+    // Function to get a random color for chart lines
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+        
 
      // Function to toggle visibility
     function toggleVisibility() {
