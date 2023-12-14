@@ -1,0 +1,1 @@
+Tu se nahajajo opisi http zaglavja in http ukazi, struktura json podatkov in podobno.
