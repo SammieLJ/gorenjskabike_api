@@ -1,0 +1,1 @@
+Tole je najbolj izpopolnjena python ver. strežnika z predikcijo in prenosom podatkov, če ni na voljo lokalna cached ver. datoteke "allData.json"
