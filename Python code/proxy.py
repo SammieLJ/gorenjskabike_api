@@ -1,5 +1,5 @@
 # proxy.py
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import json
 import requests
 import os
@@ -21,25 +21,25 @@ def generate_predictive_data(id, timestamp):
         'numberOfFreeBikes': random.randint(4, 7),
         'numberOfFreeLocks': random.randint(4, 7),
         'numberOfLocks': '10',
-        'numberOfTotalFaulty': random.choices([0,1,2], cum_weights=(60, 30, 10), k=1),
+        'numberOfTotalFaulty': random.choices([0, 1, 2], cum_weights=(60, 30, 10), k=1),
         'street': setStreet_AccordiglyToID(id),
         'timestamp': timestamp,
     }
 
 def setName_AccordiglyToID(id):
-    if (id == '96'):
+    if id == '96':
         return 'Tržič - Deteljica'
-    if (id == '97'):
+    if id == '97':
         return 'Tržič - Občina Tržič'
-    if (id == '98'):
+    if id == '98':
         return 'Tržič - BPT'
     
 def setStreet_AccordiglyToID(id):
-    if (id == '96'):
+    if id == '96':
         return 'Deteljica 2 3/4 PRD!'
-    if (id == '97'):
+    if id == '97':
         return 'Trg Svobode 18 3/3 PRD!'
-    if (id == '98'):
+    if id == '98':
         return 'Predilniška cesta 14 3/4 PRD!'
 
 def aggregate_data(selected_datetime_from, selected_datetime_to):
@@ -133,8 +133,10 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
 
 def are_timestamps_equal(timestamp1, timestamp2):
     # Parse the timestamps to datetime objects
-    dt1 = datetime.fromisoformat(timestamp1)
-    dt2 = datetime.fromisoformat(timestamp2)
+    #dt1 = datetime.fromisoformat(timestamp1)
+    #dt2 = datetime.fromisoformat(timestamp2)
+    dt1 = datetime.fromisoformat(trimDateStr(timestamp1))
+    dt2 = datetime.fromisoformat(trimDateStr(timestamp2))
 
     # Truncate microseconds to seconds
     dt1 = dt1.replace(microsecond=0)
@@ -147,6 +149,16 @@ def are_timestamps_equal(timestamp1, timestamp2):
     # Check if the UTC timestamps are equal
     return dt1_utc == dt2_utc
 
+def trimDateStr(timestamp_str):
+    const_ts_len = 19
+    timestamp_str_returned = ''
+    if len(timestamp_str) < const_ts_len:
+         timestamp_str_returned = timestamp_str
+    else:
+        timestamp_str_returned = timestamp_str[:const_ts_len]
+
+    #print('Desno trimmed TS: ', timestamp_str_returned)
+    return timestamp_str_returned
 def add_minutes_to_timestamp(timestamp, minutes):
     dt = datetime.fromisoformat(timestamp)
     dt_with_additional_minutes = dt + timedelta(minutes=minutes)
