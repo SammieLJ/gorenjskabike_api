@@ -1,0 +1,1 @@
+Tole je navadna node.js verzija serverja za prikaz podatkov gorenjska.bike
