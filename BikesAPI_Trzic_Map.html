@@ -70,11 +70,11 @@
     <b><div class="inline-div" id="currentTime"></div><p class="inline-div" id="temperature">Nalaga...</p></b>
 
     <!-- Add two datetime-local inputs for selecting date range -->
-    <label for="dateTimePickerFrom">Izberi datum:</label>
-    <input type="datetime-local" id="dateTimePickerFrom">
+    <label for="dateTimePicker">Izberi datum:</label>
+    <input type="datetime-local" id="dateTimePicker">
 
     <button onclick="fetchDataFromAPI()">Pridobi podatke</button><br />
-    <span id="DataLoadingInfo"></span><span id="TotalAllBikesStats"></span><br />
+    <span id="DataLoadingInfo"></span><span id="TotalAllBikesStats"></span>&nbsp;<span id="PastForcastWeatherTemp"></span><br />
     <div id="mapContainer">
         <img src="Gorenjska_bike_map.png" alt="City Map" width="1180" height="500" id="mapImage">
         <!-- Popups for each point -->
@@ -112,8 +112,10 @@
         // Press Button Pridobi podatke for fetchDataFromAPI function
         function fetchDataFromAPI() {
 
-            const dateTimePicker = document.getElementById('dateTimePickerFrom');
+            const dateTimePicker = document.getElementById('dateTimePicker');
             const selectedDateTime = dateTimePicker.value;
+            console.log("SelectedDateTime:", selectedDateTime);
+
 
             //Opozorimo uporabnika, da bo nekaj časa trajalo, da se podatki pridobijo iz cachesirane oblike
             const dataLoadingInfo = document.getElementById('DataLoadingInfo');
@@ -122,6 +124,8 @@
             //Zbrišemo skupno št. koles, ko čakamo, ne prikažemo.
             let totalAllBikesStats = document.getElementById('TotalAllBikesStats');
             totalAllBikesStats.innerHTML = '';
+            const resultDiv = document.getElementById('PastForcastWeatherTemp');
+            resultDiv.textContent = '';
 
             fetch(`http://localhost:3001/api/localdata?selectedDateTimeFrom=${selectedDateTime}&selectedDateTimeTo=${selectedDateTime}`)
                 .then(response => response.json())
@@ -132,6 +136,64 @@
                 })
                 .catch(error => console.error('Error fetching data:', error));
         } // end of fetchDataFromAPI
+
+        // get tweather for picked date
+        function getWeatherForecast() {
+            const dateTimePicker = document.getElementById('dateTimePicker');
+            const resultDiv = document.getElementById('PastForcastWeatherTemp');
+
+            const selectedDateTime = dateTimePicker.value;
+            const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
+            let setDateToSearch = selectedDateTime.split('T')[0];
+            let setTimeToSearch = selectedDateTime.split('T')[1];
+            console.log("currentDate:",currentDate);
+            console.log("setDateToSearch:",setDateToSearch);
+            console.log("setTimeToSearch:",setTimeToSearch);
+
+            if (selectedDateTime > currentDate) {
+                // If the selected date is in the future, calculate the date one year ago
+                const oneYearAgo = new Date(selectedDateTime);
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                setDateToSearch = oneYearAgo.toISOString().slice(0, 10);
+                console.log("MOREsetDateToSearch:",setDateToSearch);
+            }
+
+            // API call logic (replace with your actual API call)
+            const apiUrl = `https://archive-api.open-meteo.com/v1/era5?latitude=46.36&longitude=14.31&start_date=${setDateToSearch}&end_date=${setDateToSearch}&hourly=temperature_2m`;
+
+            // Assuming you are using fetch API for the API call
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the data (replace with your logic)
+                    console.log(data);
+
+                    // Check if the necessary properties are available in the API response
+                    if (data && data.hourly && data.hourly.temperature_2m !== undefined) {
+                        const timeArray = data.hourly.time;
+                        const temperatureArray = data.hourly.temperature_2m;
+                        console.log("Time and Temp Arrays");
+                        console.log(timeArray);
+                        console.log(temperatureArray);
+                        
+                        // Find the index where setTimeToSearch matches in the timeArray
+                        const index = timeArray.findIndex(time => time === selectedDateTime); //setTimeToSearch
+
+                        if (index !== -1) {
+                            // Display the result
+                            resultDiv.textContent = `Temperature for ${setTimeToSearch}: ${temperatureArray[index]}°C`;
+                        } else {
+                            resultDiv.textContent = `No temperature data available for ${setTimeToSearch}.`;
+                        }
+                    } else {
+                        resultDiv.textContent = 'Error: Unable to retrieve weather data for the selected date.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching weather data:', error);
+                    resultDiv.textContent = 'Error fetching weather data. Please try again later.';
+                });
+        }
 
         // New function to render table
         function renderTable(data) {
@@ -159,7 +221,10 @@
             });
 
             // Calculate all free and all rented bikes, last 3 records are 3 separate ids
-            calculateFor3IDsAllFreeAndRentedBikes(data)
+            calculateFor3IDsAllFreeAndRentedBikes(data);
+
+            // get and set weather temperature for picked date
+            getWeatherForecast();
         }
 
         // Calculate all free and all rented bikes, last 3 records are 3 separate ids
@@ -216,10 +281,8 @@
 
         // Function to handle calendar change
         function handleCalendarChange(event) {
-            const selectedDateTimeFrom = document.getElementById('dateTimePickerFrom').value;
-            const selectedDateTimeTo = document.getElementById('dateTimePickerTo').value;
-            console.log('Selected Date and Time From:', selectedDateTimeFrom);
-            console.log('Selected Date and Time To:', selectedDateTimeTo);
+            const selectedDateTime = document.getElementById('dateTimePicker').value;
+            console.log('Selected Date and Time From:', selectedDateTime);
         }
 
         // Function to update current time
@@ -294,8 +357,7 @@
             setInterval(updateCurrentTime, 60*1000); // Update every minute(second)
 
             // Function to handle calendar change
-            document.getElementById('dateTimePickerFrom').addEventListener('change', handleCalendarChange);
-            //document.getElementById('dateTimePickerTo').addEventListener('change', handleCalendarChange);
+            document.getElementById('dateTimePicker').addEventListener('change', handleCalendarChange);
 
             // call open-meteo API service
             callOpenMeteoAPI();
