@@ -88,34 +88,49 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
             data = [entry for entry in data if start_date <= entry.get('timestamp', '') <= end_date]
             #print(data)
 
-            # Generate predictive data for missing timestamps
+            print("Start Date", start_date)
+            print("End Date", end_date)
+
+            #set future time, staring time should be current date timestamp
+            #future_timestamp = start_date
+            #fdt = datetime.now()
+            #future_timestamp = fdt.isoformat()
+            #print("Future timestamp:", future_timestamp)
+            #end_date_isof = datetime.fromisoformat(end_date);
+
+            #if fdt >= end_date_isof:
+                # Generate predictive data for missing timestamps
             for timestamp in generate_missing_timestamps(start_date, end_date):
                 for id in ['96', '97', '98']:
+
+                    #print("timestamp", timestamp)
 
                     # Check if there is any entry with the same ID and timestamp
                     matching_entry = next((entry for entry in data if entry['id'] == id and are_timestamps_equal(timestamp, entry['timestamp'])), None)
 
                     if matching_entry is None:
                         # if it is first time generating pred. data or second time that future timestamp is equal to current timestamp
-                        if future_timestamp is None or are_timestamps_equal(timestamp, future_timestamp):
-                            #This adds for ID 96
-                            current_predictive_data_ID96 = generate_predictive_data(id, timestamp)
-                            #current_predictive_data = current_predictive_data_ID96
-
-                            current_predictive_data_ID97 = None
-                            current_predictive_data_ID98 = None
-
+                        if are_timestamps_equal(timestamp, future_timestamp):
                             # Randomly add minutes to the timestamp, people traveling by bikes 10 .. 40 min
                             additional_minutes = random.randint(10, 40)  # Adjust the range as needed
                             future_timestamp = add_minutes_to_timestamp(timestamp, additional_minutes)
-                        else:
-                            # Add for ID 97 and ID 98
-                            if id == '97' and current_predictive_data_ID97 == None:
-                                current_predictive_data_ID97 = generate_predictive_data(id, timestamp)
-                                #current_predictive_data = current_predictive_data_ID97
-                            if id == '98' and current_predictive_data_ID98 == None:
-                                current_predictive_data_ID98 = generate_predictive_data(id, timestamp)
-                                #current_predictive_data = current_predictive_data_ID98
+                            
+                            #This adds for ID 96
+                            #current_predictive_data_ID96 = generate_predictive_data(id, timestamp)
+                            #current_predictive_data = current_predictive_data_ID96
+                            current_predictive_data_ID96 = None
+                            current_predictive_data_ID97 = None
+                            current_predictive_data_ID98 = None
+                            
+                        # Add for ID 96 .. ID 98
+                        if id == '96' and current_predictive_data_ID96 == None:
+                            current_predictive_data_ID96 = generate_predictive_data(id, timestamp)
+                        if id == '97' and current_predictive_data_ID97 == None:
+                            current_predictive_data_ID97 = generate_predictive_data(id, timestamp)
+                            #current_predictive_data = current_predictive_data_ID97
+                        if id == '98' and current_predictive_data_ID98 == None:
+                            current_predictive_data_ID98 = generate_predictive_data(id, timestamp)
+                            #current_predictive_data = current_predictive_data_ID98
 
                         # for looping in between future_timestamp and current timestamp, for ID chnage to current predictive data
                         if id == '96':
@@ -126,6 +141,7 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
                             current_predictive_data = current_predictive_data_ID98
 
                         data.append(current_predictive_data)
+                        #print(current_predictive_data)
         return data
     except Exception as e:
         print('Error fetching and aggregating data:', e)
@@ -135,8 +151,10 @@ def are_timestamps_equal(timestamp1, timestamp2):
     # Parse the timestamps to datetime objects
     #dt1 = datetime.fromisoformat(timestamp1)
     #dt2 = datetime.fromisoformat(timestamp2)
-    dt1 = datetime.fromisoformat(trimDateStr(timestamp1))
-    dt2 = datetime.fromisoformat(trimDateStr(timestamp2))
+    datetime1_trimmed = trimDateStr(timestamp1)
+    dt1 = datetime.fromisoformat(datetime1_trimmed[0])
+    datetime2_trimmed = trimDateStr(timestamp2)
+    dt2 = datetime.fromisoformat(datetime2_trimmed[0])
 
     # Truncate microseconds to seconds
     dt1 = dt1.replace(microsecond=0)
@@ -146,18 +164,33 @@ def are_timestamps_equal(timestamp1, timestamp2):
     dt1_utc = dt1.replace(tzinfo=timezone.utc)
     dt2_utc = dt2.replace(tzinfo=timezone.utc)
 
+    # for debug puposes
+    #print("entry['timestamp']", timestamp2)
+    #print("are_timestamps_equal", dt1_utc == dt2_utc)
+    if datetime1_trimmed[1] == False:
+        print("datetime1_trimmed", datetime1_trimmed[1])
+        #print(dt1_utc)
+    if datetime2_trimmed[1] == False:
+        print("datetime2_trimmed", datetime2_trimmed[1])
+        #print(dt2_utc)
     # Check if the UTC timestamps are equal
-    return dt1_utc == dt2_utc
+    if datetime1_trimmed[1] and datetime2_trimmed[1]:
+        return dt1_utc == dt2_utc
+    else:
+        return False
 
 def trimDateStr(timestamp_str):
     const_ts_len = 19
     timestamp_str_returned = ''
+    trimmed = False
     if len(timestamp_str) < const_ts_len:
+        trimmed = False
         timestamp_str_returned = timestamp_str
     else:
+        trimmed = True
         timestamp_str_returned = timestamp_str[:const_ts_len]
     #print('Desno trimmed TS: ', timestamp_str_returned)
-    return timestamp_str_returned
+    return [timestamp_str_returned, trimmed]
 
 def add_minutes_to_timestamp(timestamp, minutes):
     dt = datetime.fromisoformat(timestamp)
