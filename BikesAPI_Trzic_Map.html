@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Map with Improved Popups</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        #mapContainer {
+            position: relative;
+            width: 1180px;
+            height: 500px;
+        }
+
+        .point-popup {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 2;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .clickable-area {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: transparent;
+            border-radius: 50%;
+            border: none;
+            z-index: 1;
+        }
+        .inline-div {
+            display: inline-block;
+            margin-right: 10px; /* Optional: Add some margin between the divs */
+        }
+    </style>
+</head>
+<body>
+    <h2>Stanje izposoje koles v občini Tržič</h2>
+    <b><div class="inline-div" id="currentTime"></div><p class="inline-div" id="temperature">Nalaga...</p></b>
+
+    <!-- Add two datetime-local inputs for selecting date range -->
+    <label for="dateTimePickerFrom">Izberi datum:</label>
+    <input type="datetime-local" id="dateTimePickerFrom">
+
+    <button onclick="fetchDataFromAPI()">Pridobi podatke</button><br />
+    <span id="DataLoadingInfo"></span><span id="TotalAllBikesStats"></span><br />
+    <div id="mapContainer">
+        <img src="Gorenjska_bike_map.png" alt="City Map" width="1180" height="500" id="mapImage">
+        <!-- Popups for each point -->
+        <div class="point-popup" id="ID97" style="top: 60px; left: 670px;">
+            <strong>Ime postaje:</strong> Tržič - Občina Tržič<br>
+            <strong>Ulica:</strong> Trg Svobode 18 3/3<br>
+            <strong>Št. prostih koles:</strong> /<br>
+            <strong>Št. ključavnic:</strong> /<br>
+            <strong>Št. prostih ključavnic:</strong> /<br>
+            <strong>Št. ključavnic v okvari:</strong> /
+        </div>
+        <div class="point-popup" id="ID98" style="top: 140px; left: 290px;">
+            <strong>Ime postaje:</strong> Tržič - BPT<br>
+            <strong>Ulica:</strong> Predilniška cesta 14 3/4<br>
+            <strong>Št. prostih koles:</strong> /<br>
+            <strong>Št. ključavnic:</strong> /<br>
+            <strong>Št. prostih ključavnic:</strong> /<br>
+            <strong>Št. ključavnic v okvari:</strong> /
+        </div>
+        <div class="point-popup" id="ID96" style="top: 310px; left: 430px;">
+            <strong>Ime postaje:</strong> Tržič - Deteljica<br>
+            <strong>Ulica:</strong> Deteljica 2 3/4<br>
+            <strong>Št. prostih koles:</strong> /<br>
+            <strong>Št. ključavnic:</strong> /<br>
+            <strong>Št. prostih ključavnic:</strong> /<br>
+            <strong>Št. ključavnic v okvari:</strong> /
+        </div>
+        <!-- Larger clickable areas and map markers for each point -->
+        <div class="map-marker" data-index="0" style="top: 170px; left: 590px;"></div>
+        <div class="map-marker" data-index="1" style="top: 220px; left: 540px;"></div>
+        <div class="map-marker" data-index="2" style="top: 330px; left: 320px;"></div>
+    </div>
+
+    <script>
+        // Press Button Pridobi podatke for fetchDataFromAPI function
+        function fetchDataFromAPI() {
+
+            const dateTimePicker = document.getElementById('dateTimePickerFrom');
+            const selectedDateTime = dateTimePicker.value;
+
+            //Opozorimo uporabnika, da bo nekaj časa trajalo, da se podatki pridobijo iz cachesirane oblike
+            const dataLoadingInfo = document.getElementById('DataLoadingInfo');
+            dataLoadingInfo.innerHTML = '<b><span>Please wait for moment. Data is being prepared and loaded!</span></b>';
+
+            //Zbrišemo skupno št. koles, ko čakamo, ne prikažemo.
+            let totalAllBikesStats = document.getElementById('TotalAllBikesStats');
+            totalAllBikesStats.innerHTML = '';
+
+            fetch(`http://localhost:3001/api/localdata?selectedDateTimeFrom=${selectedDateTime}&selectedDateTimeTo=${selectedDateTime}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Process and display data as needed
+                    console.log('Filtered Data:', data);
+                    renderTable(data); // Call the renderTable function
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        } // end of fetchDataFromAPI
+
+        // New function to render table
+        function renderTable(data) {
+            //Notice user, that data is ready to see on map!
+            const dataLoadingInfo = document.getElementById('DataLoadingInfo');
+            dataLoadingInfo.innerHTML = '<b><span>Data is loaded! See data on map!</span></b>';
+
+            // Display only the subset of data for the current page
+            data.slice(data.length-3, data.lengthx).forEach(station => {
+
+                // Izberemo pravi ID za popup html element
+                const dataPopupDivByID = document.getElementById(`ID${station.id}`);
+                //dataPopupDivByID.innerHTML = '';
+
+                dataPopupDivByID.innerHTML = `
+                    <strong>Ime postaje:</strong> ${station.name}<br>
+                    <strong>Ulica:</strong> ${station.street}<br>
+                    <strong>Št. prostih koles:</strong> ${station.numberOfFreeBikes}<br>
+                    <strong>Št. ključavnic:</strong> ${station.numberOfLocks}<br>
+                    <strong>Št. prostih ključavnic:</strong> ${station.numberOfFreeLocks}<br>
+                    <strong>Št. ključavnic v okvari:</strong> ${station.numberOfTotalFaulty}
+                `;
+
+               //dataPopupDivByID.appendChild(row);
+            });
+
+            // Calculate all free and all rented bikes, last 3 records are 3 separate ids
+            calculateFor3IDsAllFreeAndRentedBikes(data)
+        }
+
+        // Calculate all free and all rented bikes, last 3 records are 3 separate ids
+        function calculateFor3IDsAllFreeAndRentedBikes(data) {
+
+            let allFreeBikes = 0;
+            let allRentedOutBikes = 0;
+
+            data.slice(data.length-3, data.length).forEach(station => {
+                console.log('Data ID:', station.id);
+                console.log('Data numberOfFreeBikes:', station.numberOfFreeBikes);
+                console.log('Data numberOfFreeLocks:', station.numberOfFreeLocks);
+                console.log('Data numberOfTotalFaulty:', station.numberOfTotalFaulty);
+                allFreeBikes = parseInt(allFreeBikes) + parseInt(station.numberOfFreeBikes);
+                allRentedOutBikes += station.numberOfFreeLocks - station.numberOfTotalFaulty;
+            });
+
+            let totalAllBikesStats = document.getElementById('TotalAllBikesStats');
+            totalAllBikesStats.innerHTML = '';
+            const txt = document.createTextNode(` Skupaj za izposojo ${allFreeBikes}, skupaj izposojenih ${allRentedOutBikes} koles`);
+            totalAllBikesStats.appendChild(txt);
+
+        }
+
+        function setMarkersAndPopups() {
+            const mapContainer = document.getElementById("mapContainer");
+            const pointPopups = document.querySelectorAll(".point-popup");
+
+            const markers = [
+                { x: 635, y: 180 },
+                { x: 585, y: 230 },
+                { x: 390, y: 340 }
+            ];
+
+            markers.forEach((marker, index) => {
+                const clickableArea = document.createElement("div");
+                clickableArea.className = "clickable-area";
+                clickableArea.style.top = marker.y - 30 + "px";
+                clickableArea.style.left = marker.x - 30 + "px";
+                clickableArea.setAttribute("data-index", index);
+
+                clickableArea.addEventListener("mouseover", function() {
+                    this.style.cursor = "pointer";
+                    pointPopups[index].style.display = "block";
+                });
+
+                clickableArea.addEventListener("mouseout", function() {
+                    pointPopups[index].style.display = "none";
+                });
+
+                mapContainer.appendChild(clickableArea);
+            });
+        }
+
+        // Function to handle calendar change
+        function handleCalendarChange(event) {
+            const selectedDateTimeFrom = document.getElementById('dateTimePickerFrom').value;
+            const selectedDateTimeTo = document.getElementById('dateTimePickerTo').value;
+            console.log('Selected Date and Time From:', selectedDateTimeFrom);
+            console.log('Selected Date and Time To:', selectedDateTimeTo);
+        }
+
+        // Function to update current time
+        function updateCurrentTime() {
+            const currentTimeElement = document.getElementById('currentTime');
+            const currentDateTime = new Date();
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', timeZoneName: 'short' };
+            const formattedCurrentDateTime = formatTimestamp2(currentDateTime);
+
+            currentTimeElement.textContent = `Trenutni čas: ${formattedCurrentDateTime}`;
+        }
+
+        // Replace latitude and longitude with your desired coordinates
+        function callOpenMeteoAPI() {
+            const latitude = 46.36;
+            const longitude = 14.31;
+
+            // Construct the API URL
+            const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
+
+            // Fetch data from the API
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // Extract the current temperature from the API response
+                    const currentTemperature = data.current.temperature_2m;
+
+                    // Update the temperature display on the web page
+                    document.getElementById("temperature").innerText = `Trenutna temperatura: ${currentTemperature} °C`;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById("temperature").innerText = 'Failed to fetch temperature';
+                });
+        }
+        
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+            const year = date.getFullYear();
+
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${day}.${month}.${year} ${hours}:${minutes}`;
+        }
+
+         // Function to format timestamp
+        function formatTimestamp2(timestamp) {
+            const date = new Date(timestamp);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = date.toLocaleDateString('sl-SI', options);
+            const timeString = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+            return `${dateString} ob ${timeString}`;
+        }
+
+        function formatTimestampDateObject(timestamp) {
+            const date = new Date(timestamp);
+            return date;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            //set markers and popups
+            setMarkersAndPopups();
+
+            // Function to update current time
+            updateCurrentTime(); // first time only
+            setInterval(updateCurrentTime, 60*1000); // Update every minute(second)
+
+            // Function to handle calendar change
+            document.getElementById('dateTimePickerFrom').addEventListener('change', handleCalendarChange);
+            //document.getElementById('dateTimePickerTo').addEventListener('change', handleCalendarChange);
+
+            // call open-meteo API service
+            callOpenMeteoAPI();
+        });
+    </script>
+</body>
+</html>
