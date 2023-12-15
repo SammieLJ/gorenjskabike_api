@@ -93,9 +93,9 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
 
             #set future time, staring time should be current date timestamp
             #future_timestamp = start_date
-            #fdt = datetime.now()
-            #future_timestamp = fdt.isoformat()
-            #print("Future timestamp:", future_timestamp)
+            fdt = datetime.now()
+            future_timestamp = fdt.isoformat()
+            print("Future timestamp:", future_timestamp)
             #end_date_isof = datetime.fromisoformat(end_date);
 
             #if fdt >= end_date_isof:
