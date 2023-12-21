@@ -46,12 +46,16 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
     try:
         #data = None
         data = []  # Initialize data as an empty list
+        #gendata = []
 
         current_predictive_data = None
-        current_predictive_data_ID96 = None
-        current_predictive_data_ID97 = None
-        current_predictive_data_ID98 = None
+        # current_predictive_data_ID96 = None
+        # current_predictive_data_ID97 = None
+        # current_predictive_data_ID98 = None
+
         future_timestamp = None
+        lokalni_timestamp = ""
+        #generated_missing_timestamps = []
 
         # Check if allData.json exists
         if os.path.exists('allData.json'):
@@ -106,44 +110,29 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
             print("Hard coded last api entry date and type:", hard_coded_last_api_entry_date, type(hard_coded_last_api_entry_date))
 
             if end_date_timestamp >= hard_coded_last_api_entry_date:
+                if not data:
+                    predict_timestamp_string = start_date
+                else:
+                    # from last timestamp in data, go 1 minute foward, last timestamp is in data
+                    last_data_timestamp_string = data[-1]['timestamp']
+                    last_data_timestamp_string_trimmed = trimDateStr(last_data_timestamp_string)
+                    last_data_timestamp = datetime.fromisoformat(last_data_timestamp_string_trimmed)
+                    last_data_timestamp = last_data_timestamp + timedelta(minutes=1)
+                    predict_timestamp_string = last_data_timestamp.isoformat()
+                print("Predict start timestamp string:", predict_timestamp_string)
+
                 # Generate predictive data for missing timestamps
-                for timestamp in generate_missing_timestamps(start_date, end_date):
+                generated_missing_timestamps = list(generate_missing_timestamps(predict_timestamp_string, end_date))
+                no_gen_missing_ts = len(generated_missing_timestamps)
+                print("Generated_missing_timestamps", no_gen_missing_ts, " št. gen. elementov ", 3*no_gen_missing_ts)
+
+                # upotabi drugačno ver. for z range and len list
+                for timestamp in generated_missing_timestamps: #start_date
+                #for index, timestamp in enumerate(generated_missing_timestamps):
                     for id in ['96', '97', '98']:
+                        current_predictive_data = generate_predictive_data(id, timestamp)
+                        data.append(current_predictive_data)
 
-                        # Check if there is any entry with the same ID and timestamp
-                        matching_entry = next((entry for entry in data if entry['id'] == id and are_timestamps_equal(timestamp, entry['timestamp'])), None)
-
-                        if matching_entry is None:
-                            # if it is first time generating pred. data or second time that future timestamp is equal to current timestamp
-                            if future_timestamp is None or are_timestamps_equal(timestamp, future_timestamp):
-                                #This adds for ID 96
-                                current_predictive_data_ID96 = generate_predictive_data(id, timestamp)
-                                #current_predictive_data = current_predictive_data_ID96
-
-                                current_predictive_data_ID97 = None
-                                current_predictive_data_ID98 = None
-
-                                # Randomly add minutes to the timestamp, people traveling by bikes 10 .. 40 min
-                                additional_minutes = random.randint(10, 40)  # Adjust the range as needed
-                                future_timestamp = add_minutes_to_timestamp(timestamp, additional_minutes)
-                            else:
-                                # Add for ID 97 and ID 98
-                                if id == '97' and current_predictive_data_ID97 == None:
-                                    current_predictive_data_ID97 = generate_predictive_data(id, timestamp)
-                                    #current_predictive_data = current_predictive_data_ID97
-                                if id == '98' and current_predictive_data_ID98 == None:
-                                    current_predictive_data_ID98 = generate_predictive_data(id, timestamp)
-                                    #current_predictive_data = current_predictive_data_ID98
-
-                            # for looping in between future_timestamp and current timestamp, for ID chnage to current predictive data
-                            if id == '96':
-                                current_predictive_data = current_predictive_data_ID96
-                            if id == '97':
-                                current_predictive_data = current_predictive_data_ID97
-                            if id == '98':
-                                current_predictive_data = current_predictive_data_ID98
-
-                            data.append(current_predictive_data)
         print("Število zapisov v data (na konc): ", len(data))
         return data
     except Exception as e:
