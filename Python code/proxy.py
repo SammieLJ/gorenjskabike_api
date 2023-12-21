@@ -36,11 +36,11 @@ def setName_AccordiglyToID(id):
     
 def setStreet_AccordiglyToID(id):
     if id == '96':
-        return 'Deteljica 2 3/4 PRD!'
+        return 'Deteljica 2 3/4 P!'
     if id == '97':
-        return 'Trg Svobode 18 3/3 PRD!'
+        return 'Trg Svobode 18 3/3 P!'
     if id == '98':
-        return 'Predilniška cesta 14 3/4 PRD!'
+        return 'Predilniška cesta 14 3/4 P!'
 
 def aggregate_data(selected_datetime_from, selected_datetime_to):
     try:
@@ -84,48 +84,67 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
             start_date = selected_datetime_from
             end_date = selected_datetime_to
 
+            # print("Start Date", start_date)
+            # print("End Date", end_date)
+            end_date_timestamp = datetime.fromisoformat(end_date)
+
+            # Bike MAP spletna stran ima en date picker in sta oba enaka, treba dodat 1 min v naprej
+            if start_date == end_date:
+                end_date_timestamp = end_date_timestamp + timedelta(minutes=1)
+                end_date = end_date_timestamp.isoformat()
+            print("Start Date", start_date)
+            print("End Date", end_date)
+            print("End date timestamp and type:", end_date_timestamp, type(end_date_timestamp))
+
             # Filter data for the selected date range
             data = [entry for entry in data if start_date <= entry.get('timestamp', '') <= end_date]
             #print(data)
+            print("Število zapisov v data objektu: ", len(data))
 
-            # Generate predictive data for missing timestamps
-            for timestamp in generate_missing_timestamps(start_date, end_date):
-                for id in ['96', '97', '98']:
+            # hard coded last api entry date 2023-10-01T01:59,  prej last_data_timestamp
+            hard_coded_last_api_entry_date = datetime.fromisoformat("2023-10-01T01:59")
+            print("Hard coded last api entry date and type:", hard_coded_last_api_entry_date, type(hard_coded_last_api_entry_date))
 
-                    # Check if there is any entry with the same ID and timestamp
-                    matching_entry = next((entry for entry in data if entry['id'] == id and are_timestamps_equal(timestamp, entry['timestamp'])), None)
+            if end_date_timestamp >= hard_coded_last_api_entry_date:
+                # Generate predictive data for missing timestamps
+                for timestamp in generate_missing_timestamps(start_date, end_date):
+                    for id in ['96', '97', '98']:
 
-                    if matching_entry is None:
-                        # if it is first time generating pred. data or second time that future timestamp is equal to current timestamp
-                        if future_timestamp is None or are_timestamps_equal(timestamp, future_timestamp):
-                            #This adds for ID 96
-                            current_predictive_data_ID96 = generate_predictive_data(id, timestamp)
-                            #current_predictive_data = current_predictive_data_ID96
+                        # Check if there is any entry with the same ID and timestamp
+                        matching_entry = next((entry for entry in data if entry['id'] == id and are_timestamps_equal(timestamp, entry['timestamp'])), None)
 
-                            current_predictive_data_ID97 = None
-                            current_predictive_data_ID98 = None
+                        if matching_entry is None:
+                            # if it is first time generating pred. data or second time that future timestamp is equal to current timestamp
+                            if future_timestamp is None or are_timestamps_equal(timestamp, future_timestamp):
+                                #This adds for ID 96
+                                current_predictive_data_ID96 = generate_predictive_data(id, timestamp)
+                                #current_predictive_data = current_predictive_data_ID96
 
-                            # Randomly add minutes to the timestamp, people traveling by bikes 10 .. 40 min
-                            additional_minutes = random.randint(10, 40)  # Adjust the range as needed
-                            future_timestamp = add_minutes_to_timestamp(timestamp, additional_minutes)
-                        else:
-                            # Add for ID 97 and ID 98
-                            if id == '97' and current_predictive_data_ID97 == None:
-                                current_predictive_data_ID97 = generate_predictive_data(id, timestamp)
-                                #current_predictive_data = current_predictive_data_ID97
-                            if id == '98' and current_predictive_data_ID98 == None:
-                                current_predictive_data_ID98 = generate_predictive_data(id, timestamp)
-                                #current_predictive_data = current_predictive_data_ID98
+                                current_predictive_data_ID97 = None
+                                current_predictive_data_ID98 = None
 
-                        # for looping in between future_timestamp and current timestamp, for ID chnage to current predictive data
-                        if id == '96':
-                            current_predictive_data = current_predictive_data_ID96
-                        if id == '97':
-                            current_predictive_data = current_predictive_data_ID97
-                        if id == '98':
-                            current_predictive_data = current_predictive_data_ID98
+                                # Randomly add minutes to the timestamp, people traveling by bikes 10 .. 40 min
+                                additional_minutes = random.randint(10, 40)  # Adjust the range as needed
+                                future_timestamp = add_minutes_to_timestamp(timestamp, additional_minutes)
+                            else:
+                                # Add for ID 97 and ID 98
+                                if id == '97' and current_predictive_data_ID97 == None:
+                                    current_predictive_data_ID97 = generate_predictive_data(id, timestamp)
+                                    #current_predictive_data = current_predictive_data_ID97
+                                if id == '98' and current_predictive_data_ID98 == None:
+                                    current_predictive_data_ID98 = generate_predictive_data(id, timestamp)
+                                    #current_predictive_data = current_predictive_data_ID98
 
-                        data.append(current_predictive_data)
+                            # for looping in between future_timestamp and current timestamp, for ID chnage to current predictive data
+                            if id == '96':
+                                current_predictive_data = current_predictive_data_ID96
+                            if id == '97':
+                                current_predictive_data = current_predictive_data_ID97
+                            if id == '98':
+                                current_predictive_data = current_predictive_data_ID98
+
+                            data.append(current_predictive_data)
+        print("Število zapisov v data (na konc): ", len(data))
         return data
     except Exception as e:
         print('Error fetching and aggregating data:', e)
