@@ -116,7 +116,6 @@
             const selectedDateTime = dateTimePicker.value;
             console.log("SelectedDateTime:", selectedDateTime);
 
-
             //Opozorimo uporabnika, da bo nekaj časa trajalo, da se podatki pridobijo iz cachesirane oblike
             const dataLoadingInfo = document.getElementById('DataLoadingInfo');
             dataLoadingInfo.innerHTML = '<b><span>Please wait for moment. Data is being prepared and loaded!</span></b>';
@@ -146,6 +145,8 @@
             const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
             let setDateToSearch = selectedDateTime.split('T')[0];
             let setTimeToSearch = selectedDateTime.split('T')[1];
+            console.log("Inside getWeatherForecast funkcije!");
+
             console.log("currentDate:",currentDate);
             console.log("setDateToSearch:",setDateToSearch);
             console.log("setTimeToSearch:",setTimeToSearch);
@@ -175,9 +176,12 @@
                         console.log("Time and Temp Arrays");
                         console.log(timeArray);
                         console.log(temperatureArray);
-                        
+
+
+                        const findSelectedDateTime = selectedDateTime.substring(0, selectedDateTime.length - 2) + '00';
+                        console.log("findSelectedDateTime is ",findSelectedDateTime);
                         // Find the index where setTimeToSearch matches in the timeArray
-                        const index = timeArray.findIndex(time => time === selectedDateTime); //setTimeToSearch
+                        const index = timeArray.findIndex(time => time === findSelectedDateTime); //selectedDateTime setTimeToSearch
 
                         if (index !== -1) {
                             // Display the result
