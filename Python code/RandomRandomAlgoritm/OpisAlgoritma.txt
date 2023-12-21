@@ -1,0 +1,1 @@
+Poizkus Random Random algoritma, kjer je Random future_timestamp pri generiranju ohranja podatke, do naslednje bodoče timestamp minute, kjer se podatki na Random zgenerirajo. Na žalost ne deluje, kjer se pojavi limitacija Pythona, ker povzroči object mutablity!
