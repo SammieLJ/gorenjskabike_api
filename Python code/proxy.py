@@ -54,6 +54,7 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
         # current_predictive_data_ID98 = None
 
         future_timestamp = None
+        future_index = 0
         lokalni_timestamp = ""
         #generated_missing_timestamps = []
 
@@ -113,7 +114,7 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
                 if not data:
                     predict_timestamp_string = start_date
                 else:
-                    # from last timestamp in data, go 1 minute foward, last timestamp is in data
+                    # from last timestamp in data, go 1 minute forward, last timestamp is in data
                     last_data_timestamp_string = data[-1]['timestamp']
                     last_data_timestamp_string_trimmed = trimDateStr(last_data_timestamp_string)
                     last_data_timestamp = datetime.fromisoformat(last_data_timestamp_string_trimmed)
@@ -126,11 +127,20 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
                 no_gen_missing_ts = len(generated_missing_timestamps)
                 print("Generated_missing_timestamps", no_gen_missing_ts, " št. gen. elementov ", 3*no_gen_missing_ts)
 
-                # upotabi drugačno ver. for z range and len list
-                for timestamp in generated_missing_timestamps: #start_date
-                #for index, timestamp in enumerate(generated_missing_timestamps):
+                # uporabi drugačno ver. for z range and len list
+                #for timestamp in generated_missing_timestamps: #start_date
+                for index, timestamp in enumerate(generated_missing_timestamps):
                     for id in ['96', '97', '98']:
-                        current_predictive_data = generate_predictive_data(id, timestamp)
+
+                        if future_index == index or index == 0:
+                            #print("index je enak future_index")
+                            current_predictive_data = generate_predictive_data(id, timestamp)
+                            future_index = setFutureIndex(index)
+                        else:
+                            #print("Deep copy = index NI enak future_index")
+                            current_predictive_data = deep_copy_current_predictive_data(current_predictive_data, id, timestamp)
+
+                        #current_predictive_data = generate_predictive_data(id, timestamp)
                         data.append(current_predictive_data)
 
         print("Število zapisov v data (na konc): ", len(data))
@@ -138,6 +148,25 @@ def aggregate_data(selected_datetime_from, selected_datetime_to):
     except Exception as e:
         print('Error fetching and aggregating data:', e)
         return []
+
+
+def setFutureIndex(startPos):
+    return startPos + random.randint(1, 15)
+def deep_copy_current_predictive_data(current_predictive_data, id, timestamp):
+        return {
+            'id': id,
+            'lat': '46.355340188965926',
+            'lon': '0',
+            'name': current_predictive_data['name'],
+            'numberOfBikes': current_predictive_data['numberOfBikes'],
+            'numberOfElectricBikes': current_predictive_data['numberOfElectricBikes'],
+            'numberOfFreeBikes': current_predictive_data['numberOfFreeBikes'],
+            'numberOfFreeLocks': current_predictive_data['numberOfFreeLocks'],
+            'numberOfLocks': current_predictive_data['numberOfLocks'],
+            'numberOfTotalFaulty': current_predictive_data['numberOfTotalFaulty'],
+            'street': current_predictive_data['street'],
+            'timestamp': timestamp,
+        }
 
 def are_timestamps_equal(timestamp1, timestamp2):
     # Parse the timestamps to datetime objects
