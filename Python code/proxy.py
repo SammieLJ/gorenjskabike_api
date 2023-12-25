@@ -157,14 +157,16 @@ def deep_copy_current_predictive_data(current_predictive_data, id, timestamp):
             'id': id,
             'lat': '46.355340188965926',
             'lon': '0',
-            'name': current_predictive_data['name'],
+            #"'name': current_predictive_data['name'],
+            'name': setName_AccordiglyToID(id),
             'numberOfBikes': current_predictive_data['numberOfBikes'],
             'numberOfElectricBikes': current_predictive_data['numberOfElectricBikes'],
             'numberOfFreeBikes': current_predictive_data['numberOfFreeBikes'],
             'numberOfFreeLocks': current_predictive_data['numberOfFreeLocks'],
             'numberOfLocks': current_predictive_data['numberOfLocks'],
             'numberOfTotalFaulty': current_predictive_data['numberOfTotalFaulty'],
-            'street': current_predictive_data['street'],
+            #'street': current_predictive_data['street'],
+            'street': setStreet_AccordiglyToID(id),
             'timestamp': timestamp,
         }
 
