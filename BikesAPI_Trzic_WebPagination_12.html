@@ -72,9 +72,9 @@
     <input type="datetime-local" id="dateTimePickerTo">
 
     <button onclick="fetchDataFromAPI()">Pridobi podatke</button>
-    <button onclick="toggleVisibility()">Prikaži tabelo</button>
+    <button onclick="toggleVisibility()">Prikaži tabelo</button><br />
     
-    <span id="TotalDataRecords"></span><br />
+    <span id="TotalDataRecords"></span>
     <span id="TotalAllBikesStats"></span><br />
 
     <div><canvas id="lineChart" width="800" height="400"></canvas></div>
@@ -108,6 +108,11 @@
 
             if (!selectedDateTimeFrom || !selectedDateTimeTo) {
                 alert('Please select both date and time.');
+                return;
+            }
+
+            if (selectedDateTimeFrom > selectedDateTimeTo) {
+                alert('Invalid date range. Please make sure Select Date From is older than Select Date To.');
                 return;
             }
 
