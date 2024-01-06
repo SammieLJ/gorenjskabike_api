@@ -141,7 +141,8 @@
             const dateTimePicker = document.getElementById('dateTimePicker');
             const resultDiv = document.getElementById('PastForcastWeatherTemp');
 
-            const selectedDateTime = dateTimePicker.value;
+            //const selectedDateTime = dateTimePicker.value;
+            let selectedDateTime = dateTimePicker.value;
             const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
             let setDateToSearch = selectedDateTime.split('T')[0];
             let setTimeToSearch = selectedDateTime.split('T')[1];
@@ -157,6 +158,8 @@
                 oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
                 setDateToSearch = oneYearAgo.toISOString().slice(0, 10);
                 console.log("MOREsetDateToSearch:",setDateToSearch);
+                selectedDateTime = oneYearAgo.toISOString().slice(0, 16);
+                console.log("NEW selectedDateTime is ", selectedDateTime);
             }
 
             // API call logic (replace with your actual API call)
@@ -302,6 +305,7 @@
 
         // Replace latitude and longitude with your desired coordinates
         function callOpenMeteoAPI() {
+            //localtion of Tržič town
             const latitude = 46.36;
             const longitude = 14.31;
 
